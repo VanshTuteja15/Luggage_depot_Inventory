@@ -4,7 +4,7 @@ import { StatusBar } from 'expo-status-bar';
 import { StyleSheet } from 'react-native';
 import 'react-native-reanimated';
 
-import { AppProviders } from '@/providers/AppProviders';
+import { AppProviders } from '@/features/app/providers/AppProviders';
 import { colors } from '@/constants/theme';
 
 export default function RootLayout() {

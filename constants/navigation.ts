@@ -5,52 +5,76 @@ export type NavItem = {
   href: Href;
   icon: string;
   description: string;
+  /** Route segment used for active-state matching in the drawer */
+  segment: string;
 };
+
+export const APP_NAME = 'Luggage Depot OS';
+export const APP_TAGLINE = 'Inventory, pricing & AI ordering';
+
+/** Typed-route-safe href helper until Expo regenerates route types */
+function route(path: string): Href {
+  return path as Href;
+}
 
 export const APP_NAV_ITEMS: NavItem[] = [
   {
     label: 'Dashboard',
-    href: '/(app)',
+    href: route('/'),
     icon: 'grid-outline',
-    description: 'Overview and recent activity',
+    description: 'Overview and key metrics',
+    segment: 'index',
   },
   {
     label: 'Inventory',
-    href: '/(app)/inventory',
+    href: route('/inventory'),
     icon: 'cube-outline',
-    description: 'Search and manage products',
+    description: 'Products, stock, and filters',
+    segment: 'inventory',
   },
   {
-    label: 'Locations',
-    href: '/(app)/locations',
-    icon: 'location-outline',
-    description: 'Store locations',
-  },
-  {
-    label: 'Categories',
-    href: '/(app)/categories',
-    icon: 'pricetags-outline',
-    description: 'Product categories',
-  },
-  {
-    label: 'Transfer Stock',
-    href: '/(app)/transfer',
-    icon: 'swap-horizontal-outline',
-    description: 'Move stock between stores',
-  },
-  {
-    label: 'Import / Export',
-    href: '/(app)/import-export',
-    icon: 'document-text-outline',
-    description: 'CSV inventory sync',
+    label: 'Pricing',
+    href: route('/pricing'),
+    icon: 'pricetag-outline',
+    description: 'Landed cost and retail price',
+    segment: 'pricing',
   },
   {
     label: 'Reports',
-    href: '/(app)/reports',
+    href: route('/reports'),
     icon: 'bar-chart-outline',
-    description: 'Inventory insights',
+    description: 'Margins, profit, and insights',
+    segment: 'reports',
+  },
+  {
+    label: 'Forecast & Orders',
+    href: route('/forecast'),
+    icon: 'trending-up-outline',
+    description: 'AI sales forecasting and ordering',
+    segment: 'forecast',
+  },
+  {
+    label: 'Locations',
+    href: route('/locations'),
+    icon: 'location-outline',
+    description: 'Calgary store locations',
+    segment: 'locations',
+  },
+  {
+    label: 'Import / Export',
+    href: route('/import-export'),
+    icon: 'document-text-outline',
+    description: 'CSV inventory sync',
+    segment: 'import-export',
   },
 ];
 
-export const APP_NAME = 'Luggage Depot OS';
-export const APP_TAGLINE = 'Inventory & retail operations';
+export function isNavItemActive(pathname: string, item: NavItem): boolean {
+  const normalized = pathname.replace(/\/$/, '') || '/';
+
+  if (item.segment === 'index') {
+    return normalized === '/' || normalized === '/index';
+  }
+
+  return normalized === `/${item.segment}` || normalized.startsWith(`/${item.segment}/`);
+}

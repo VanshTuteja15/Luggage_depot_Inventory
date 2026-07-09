@@ -1,11 +1,12 @@
-import { PlaceholderScreen } from '@/components/screens/PlaceholderScreens';
+import { ShellScreen } from '@/features/app/components/ShellScreen';
 
 export default function InventoryScreen() {
   return (
-    <PlaceholderScreen
+    <ShellScreen
       title="Inventory"
-      subtitle="Search and manage products across locations"
-      phase="Phase 5"
+      subtitle="Products, stock, and filters"
+      phaseLabel="Inventory features will be added in Phase 2"
+      icon="cube-outline"
     />
   );
 }

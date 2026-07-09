@@ -1,11 +1,12 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View, useWindowDimensions } from 'react-native';
 import { DrawerContentScrollView, type DrawerContentComponentProps } from '@react-navigation/drawer';
 import { usePathname, useRouter, type Href } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 import { Text } from '@/components/ui';
-import { APP_NAME, APP_NAV_ITEMS, APP_TAGLINE } from '@/constants/navigation';
+import { APP_NAME, APP_NAV_ITEMS, APP_TAGLINE, isNavItemActive } from '@/constants/navigation';
 import { colors, spacing, touchTarget } from '@/constants/theme';
+import { isWeb } from '@/utils/platform';
 
 export function AppDrawerContent(props: DrawerContentComponentProps) {
   const router = useRouter();
@@ -13,7 +14,9 @@ export function AppDrawerContent(props: DrawerContentComponentProps) {
 
   const navigate = (href: Href) => {
     router.push(href);
-    props.navigation.closeDrawer();
+    if (!isWeb) {
+      props.navigation.closeDrawer();
+    }
   };
 
   return (
@@ -37,32 +40,27 @@ export function AppDrawerContent(props: DrawerContentComponentProps) {
 
       <View style={styles.navSection}>
         {APP_NAV_ITEMS.map((item) => {
-          const hrefString = typeof item.href === 'string' ? item.href : String(item.href);
-          const routeKey = hrefString.replace('/(app)', '') || '/';
-          const isActive =
-            pathname === routeKey ||
-            pathname === hrefString ||
-            (routeKey !== '/' && pathname.startsWith(routeKey.replace(/^\//, '')));
+          const active = isNavItemActive(pathname, item);
 
           return (
             <Pressable
               key={item.label}
               accessibilityRole="button"
-              accessibilityState={{ selected: isActive }}
+              accessibilityState={{ selected: active }}
               accessibilityLabel={`${item.label}. ${item.description}`}
               onPress={() => navigate(item.href)}
               style={({ pressed }) => [
                 styles.navItem,
-                isActive && styles.navItemActive,
+                active && styles.navItemActive,
                 pressed && styles.navItemPressed,
               ]}>
               <Ionicons
                 name={item.icon as keyof typeof Ionicons.glyphMap}
                 size={20}
-                color={isActive ? colors.accent : colors.textOnDark}
+                color={active ? colors.accent : colors.textOnDark}
               />
               <View style={styles.navCopy}>
-                <Text variant="label" color={isActive ? colors.textOnDark : colors.textOnDark}>
+                <Text variant="label" color={colors.textOnDark}>
                   {item.label}
                 </Text>
                 <Text variant="bodySmall" color={colors.accentMuted}>
@@ -75,6 +73,20 @@ export function AppDrawerContent(props: DrawerContentComponentProps) {
       </View>
     </DrawerContentScrollView>
   );
+}
+
+export function useDrawerOptions() {
+  const { width } = useWindowDimensions();
+  const isLargeScreen = width >= 1024;
+
+  return {
+    drawerType: (isLargeScreen ? 'permanent' : 'front') as 'permanent' | 'front',
+    swipeEnabled: !isWeb,
+    drawerStyle: {
+      backgroundColor: colors.primary,
+      width: isLargeScreen ? 280 : 300,
+    },
+  };
 }
 
 const styles = StyleSheet.create({
@@ -95,8 +107,8 @@ const styles = StyleSheet.create({
     borderBottomColor: 'rgba(242, 242, 240, 0.15)',
   },
   brandMark: {
-    width: 44,
-    height: 44,
+    width: touchTarget,
+    height: touchTarget,
     borderRadius: 12,
     backgroundColor: colors.primaryDark,
     alignItems: 'center',

@@ -1,5 +1,12 @@
-import { DashboardPlaceholder } from '@/components/screens/PlaceholderScreens';
+import { ShellScreen } from '@/features/app/components/ShellScreen';
 
 export default function DashboardScreen() {
-  return <DashboardPlaceholder />;
+  return (
+    <ShellScreen
+      title="Dashboard"
+      subtitle="Overview and key metrics"
+      phaseLabel="Dashboard metrics will be added in Phase 2"
+      icon="grid-outline"
+    />
+  );
 }

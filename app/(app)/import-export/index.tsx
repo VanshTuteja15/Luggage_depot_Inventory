@@ -1,11 +1,12 @@
-import { PlaceholderScreen } from '@/components/screens/PlaceholderScreens';
+import { ShellScreen } from '@/features/app/components/ShellScreen';
 
 export default function ImportExportScreen() {
   return (
-    <PlaceholderScreen
+    <ShellScreen
       title="Import / Export"
-      subtitle="Sync inventory with CSV files"
-      phase="Phase 8"
+      subtitle="CSV inventory sync"
+      phaseLabel="CSV import and export will be added in a later phase"
+      icon="document-text-outline"
     />
   );
 }

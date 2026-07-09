@@ -44,6 +44,17 @@ export const radii = {
 
 export const touchTarget = 44;
 
+/** WCAG AA targets used across the design system */
+export const accessibility = {
+  minTouchTarget: touchTarget,
+  minBodyFontSize: 16,
+  minLargeTextFontSize: 18,
+  minLineHeightRatio: 1.4,
+  minContrastBody: 4.5,
+  minContrastLargeText: 3,
+  focusRingColor: colors.accent,
+} as const;
+
 export const fontFamily = Platform.select({
   ios: 'System',
   android: 'Roboto',

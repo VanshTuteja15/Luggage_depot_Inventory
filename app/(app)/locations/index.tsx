@@ -1,11 +1,12 @@
-import { PlaceholderScreen } from '@/components/screens/PlaceholderScreens';
+import { ShellScreen } from '@/features/app/components/ShellScreen';
 
 export default function LocationsScreen() {
   return (
-    <PlaceholderScreen
+    <ShellScreen
       title="Locations"
-      subtitle="Manage Calgary store locations"
-      phase="Phase 4"
+      subtitle="Calgary store locations"
+      phaseLabel="Location management will be added in a later phase"
+      icon="location-outline"
     />
   );
 }
