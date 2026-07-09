@@ -1,122 +1,154 @@
 # Luggage Depot OS
 
-**Luggage Depot OS** is a professional inventory, pricing, reporting, and AI ordering platform for [Luggage Depot Inc.](https://luggagedepot.ca) — a multi-location luggage retailer in Calgary.
+**Luggage Depot OS** is a commercial retail operating system for [Luggage Depot Inc.](https://luggagedepot.ca) — inventory, pricing, forecasting, and purchase planning for a multi-location luggage retailer in Calgary.
 
-This app helps the owner track inventory across stores, understand landed cost and retail pricing, filter products by brand/color/size/price, review margins, forecast sales, and prepare inventory orders — replacing slow Excel workflows with a fast, reliable system.
+Clover POS remains the checkout system. Luggage Depot OS is the business layer above it.
 
-## Approach
+```
+Supplier → Luggage Depot OS → Inventory / Pricing / Forecasting / Orders → Clover POS → Customer
+```
 
-### Dummy-data-first (Phase 2+)
+## Architecture
 
-The app is built **dummy-data-first** for development and client demos. Realistic seed data will power screens before any live client data is connected. This keeps development fast while the UI and business logic mature.
+### Variant-first inventory model
 
-### Mobile + web
+Stock is **never** tracked at the parent product level. Every sellable unit is a **product variant**:
 
-Runs on:
+```
+Product (Samsonite Omni PC)
+  ├── Variant: Black / 20"  (SKU, barcode, landed cost, retail price)
+  ├── Variant: Black / 24"
+  └── Variant: Navy / 20"
+```
 
-- **iOS / Android** via Expo Go
-- **Web browser** locally (`npm run web`)
-- **Vercel** via static export (`npm run build:web`)
+| Layer | Responsibility |
+|-------|----------------|
+| `types/domain.ts` | Domain models and service result types |
+| `schemas/` | Zod validation for seed data and future imports |
+| `data/seed/` | Realistic dummy data generation |
+| `repositories/` | Data access interfaces + in-memory implementation |
+| `services/` | Business logic (pricing, forecast, dashboard, filters) |
+| `features/` | Screen-level UI and hooks (no business logic in components) |
+| `components/` | Shared design-system UI |
+| `app/` | Expo Router routes |
 
-Platform-aware code is used where needed (e.g. `expo-secure-store` on native, `localStorage` on web via `.web.ts` files).
+### Dummy-data-first
+
+Phase 2 uses an **in-memory repository** backed by a seeded dataset:
+
+- 8 Calgary-area locations
+- 10 real luggage brands
+- 25 parent products
+- 75–120 variants (color × size matrix)
+- 90 days of Clover-shaped sales history
+- Stock movements and per-location inventory
+
+Replace `repositories/in-memory-retail-repository.ts` with Supabase repositories later — **screens and services stay the same**.
 
 ### Future Supabase migration
 
-The architecture is designed to migrate from local/dummy data services to **Supabase** (PostgreSQL + auth + RLS) without rewriting screens:
+1. Mirror domain tables: `products`, `product_variants`, `inventory`, `stock_movements`, `sales_history`
+2. Implement `RetailRepository` against Supabase client
+3. Swap `getRetailRepository()` factory — no UI changes required
+4. Add RLS per role (`types/roles.ts`)
 
-| Layer | Purpose |
-|-------|---------|
-| `app/` | Expo Router screens and navigation |
-| `components/` | Shared UI components |
-| `features/` | Feature modules (UI + hooks per domain) |
-| `services/` | Data access (dummy now, Supabase later) |
-| `data/` | Seed payloads and fixtures |
-| `schemas/` | Zod validation schemas |
-| `types/` | Shared TypeScript types |
-| `utils/` | Platform helpers and utilities |
-| `constants/` | Design tokens and navigation |
+### Future Clover integration
+
+Clover is isolated behind interfaces in `services/clover/`:
+
+- `CloverSalesAdapter` — future API sync
+- `SalesCsvMapper` — CSV import from Clover exports
+- `SalesHistoryRecord.source = 'clover'` when live
+
+**Do not** call Clover from screens. Only adapters and import services.
+
+### Future AI roadmap
+
+Phase 2 forecasting is **rule-based** (average daily sales → days remaining → reorder quantity → risk level).
+
+Planned AI enhancements (not built yet):
+
+- Natural-language inventory search
+- Demand forecasting with seasonality
+- Reorder recommendations with supplier lead times
+- "Ask inventory" assistant
+- Anomaly detection on stock movements
 
 ## Tech stack
 
-- **Expo SDK 54** (pinned at `54.0.0`)
-- **Expo Router** with drawer navigation
-- **TypeScript**
-- **React Native** for iOS, Android, and web
-
-## Prerequisites
-
-- Node.js 20+
-- npm
-- [Expo Go](https://expo.dev/go) on your phone (for mobile testing)
+- Expo SDK **54.0.0** (pinned)
+- Expo Router + drawer navigation
+- TypeScript + Zod
+- iOS, Android (Expo Go), and web (static export)
 
 ## Setup
 
 ```bash
-git clone <repository-url>
-cd luggage_depot_demo
 npm install
+npm start
 ```
 
-## Run locally
+| Command | Purpose |
+|---------|---------|
+| `npm start` | Dev server (Expo Go + web) |
+| `npm run web` | Web browser only |
+| `npm run typecheck` | TypeScript |
+| `npm run lint` | ESLint |
+| `npm run build:web` | Static export to `dist/` |
+| `npx expo-doctor` | Expo health check |
+
+## Test locally
 
 ```bash
-# Start dev server (then press w / i / a for web / iOS / Android)
 npm start
-
-# Or directly:
-npm run web
-npm run ios
-npm run android
 ```
 
-Open:
+- Press **w** for web → Dashboard shows live metrics from dummy data
+- Scan QR in **Expo Go** for iOS/Android
+- Open drawer → all routes work; only Dashboard has real data in Phase 2
 
-- **Web:** http://localhost:8081
-- **Mobile:** scan the QR code in Expo Go
-
-## Test web build (Vercel preview)
+## Test web build
 
 ```bash
 npm run build:web
 npx serve dist
 ```
 
-The static site is output to `dist/`.
-
 ## Deploy to Vercel
 
-1. Connect this repository to [Vercel](https://vercel.com).
-2. Vercel reads `vercel.json` automatically:
-   - **Build command:** `npm run build:web`
-   - **Output directory:** `dist`
-3. Deploy. Client-side routes fall back to `index.html` via rewrites.
+`vercel.json` is configured:
 
-To redeploy after changes:
+- Build: `npm run build:web`
+- Output: `dist`
 
-```bash
-git push
+Push to Git or redeploy from the Vercel dashboard.
+
+## Project structure
+
 ```
-
-Or trigger a manual redeploy from the Vercel dashboard.
-
-## Project health
-
-```bash
-npm run typecheck
-npm run lint
-npx expo-doctor
+app/                 # Routes
+components/          # Shared UI
+constants/           # Theme, navigation
+data/seed/           # Dummy data generator
+features/            # Feature modules (dashboard, app shell)
+repositories/        # Data access layer
+schemas/             # Zod schemas
+services/            # Business logic
+types/               # Domain types
+utils/               # Formatting, IDs, platform helpers
 ```
 
 ## Current phase
 
-**Phase 1 — Foundation** (complete)
+**Phase 2 — Business data layer** (complete)
 
-- Design system and shared components
-- Drawer app shell with route stubs
-- Folder architecture for features, services, data, schemas
-- Web export and Vercel config
+- Variant-first domain model
+- Seeded dummy database
+- Pricing, forecast, filter, and dashboard services
+- Clover-ready interfaces
+- Live dashboard UI
 
-**Phase 2** will add dummy data, product models, and first real screens.
+**Phase 3+** will add authentication, inventory screens, and Supabase.
 
 ## License
 

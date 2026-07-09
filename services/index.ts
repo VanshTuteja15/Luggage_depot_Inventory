@@ -1,5 +1,6 @@
-/**
- * Data access and external integrations.
- * Phase 2+: dummy data services. Later: Supabase client and repositories.
- */
 export * from './storage';
+export * from './pricing';
+export * from './forecast';
+export * from './filter';
+export * from './dashboard';
+export * from './clover';

@@ -3,3 +3,4 @@
  * Phase 2+: inventory, pricing, forecast, reports, etc.
  */
 export * from './app';
+export * from './dashboard';

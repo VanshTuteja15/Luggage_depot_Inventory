@@ -1,5 +1,4 @@
-/**
- * Dummy data, seed payloads, and local JSON fixtures.
- * Phase 2+ will populate this layer before Supabase migration.
- */
-export {};
+import { generateSeedData } from './seed';
+
+export { generateSeedData, getSeedDataStats } from './seed';
+export type { SeedDataSet, SeedDataStats } from '@/types/domain';
