@@ -34,6 +34,7 @@ function matchesSearch(
     product.name.toLowerCase().includes(term) ||
     brand.name.toLowerCase().includes(term) ||
     variant.sku.toLowerCase().includes(term) ||
+    variant.barcode.toLowerCase().includes(term) ||
     variant.color.toLowerCase().includes(term) ||
     variant.size.toLowerCase().includes(term)
   );
