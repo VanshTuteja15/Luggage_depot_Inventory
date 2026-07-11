@@ -1,6 +1,7 @@
-import type { ParsedProductFormValues } from '@/schemas/forms';
 import { getRetailRepository } from '@/repositories';
+import { RepositoryError } from '@/repositories/mutation-interface';
 import { invalidateRetailCaches } from '@/services/cache/invalidate-retail-cache';
+import type { ParsedVariantEntry, ProductFormValues } from '@/schemas/forms';
 import type { Product, ProductVariant } from '@/types/domain';
 import { createBarcode, createId } from '@/utils/id';
 
@@ -11,81 +12,102 @@ export class CatalogServiceError extends Error {
   }
 }
 
-export function createProductWithVariant(
-  values: ParsedProductFormValues,
-  initialStockByLocation: Record<string, number> = {}
-): { productId: string; variantId: string } {
-  const repo = getRetailRepository();
-
-  if (repo.isSkuTaken(values.sku)) {
-    throw new CatalogServiceError(`SKU "${values.sku}" is already in use`);
+function wrapRepositoryError(error: unknown): never {
+  if (error instanceof RepositoryError) {
+    throw new CatalogServiceError(error.message);
   }
+  throw error;
+}
 
+export function createProductWithVariants(
+  productValues: ProductFormValues,
+  variants: ParsedVariantEntry[]
+): { productId: string; variantIds: string[]; firstVariantId: string } {
+  const repo = getRetailRepository();
   const now = new Date().toISOString();
   const productId = createId();
-  const variantId = createId();
 
   const product: Product = {
     id: productId,
-    name: values.name.trim(),
-    brandId: values.brandId,
-    categoryId: values.categoryId,
-    supplierId: values.supplierId,
-    description: values.description.trim(),
-    notes: values.notes.trim(),
+    name: productValues.name.trim(),
+    brandId: productValues.brandId,
+    categoryId: productValues.categoryId,
+    supplierId: productValues.supplierId,
+    description: productValues.description.trim(),
+    notes: productValues.notes.trim(),
     createdAt: now,
     updatedAt: now,
   };
 
-  const variant: ProductVariant = {
-    id: variantId,
-    productId,
-    sku: values.sku.trim(),
-    barcode: values.barcode.trim(),
-    color: values.color.trim(),
-    size: values.size.trim(),
-    landedCost: values.landedCost,
-    retailPrice: values.retailPrice,
-    reorderPoint: values.reorderPoint,
-    threshold: values.threshold,
-    active: values.active,
-    createdAt: now,
-    updatedAt: now,
-  };
-
-  repo.createProduct(product);
-  repo.createVariant(variant);
-
-  Object.entries(initialStockByLocation).forEach(([locationId, quantity]) => {
-    if (quantity <= 0) return;
-
-    repo.createInventoryRecord({
-      id: createId(),
-      variantId,
-      locationId,
-      quantity,
-      updatedAt: now,
-    });
-
-    repo.createStockMovement({
-      id: createId(),
-      variantId,
-      locationId,
-      change: quantity,
-      reason: 'Initial stock on product creation',
-      movementType: 'initial_stock',
+  const variantPayload = variants.map((entry) => {
+    const variantId = createId();
+    const variant: ProductVariant = {
+      id: variantId,
+      productId,
+      sku: entry.sku,
+      barcode: entry.barcode || createBarcode(variantId.length + Date.now()),
+      color: entry.color,
+      size: entry.size,
+      landedCost: entry.landedCost,
+      retailPrice: entry.retailPrice,
+      reorderPoint: entry.reorderPoint,
+      threshold: entry.threshold,
+      active: entry.active,
       createdAt: now,
-    });
+      updatedAt: now,
+    };
+    return { variant, initialStockByLocation: entry.initialStockByLocation };
   });
 
-  invalidateRetailCaches();
-  return { productId, variantId };
+  try {
+    const result = repo.createProductWithVariants(product, variantPayload);
+    invalidateRetailCaches();
+    return { ...result, firstVariantId: result.variantIds[0] };
+  } catch (error) {
+    wrapRepositoryError(error);
+  }
+}
+
+export function addVariantsToProduct(
+  productId: string,
+  variants: ParsedVariantEntry[]
+): string[] {
+  const repo = getRetailRepository();
+  const now = new Date().toISOString();
+
+  const variantPayload = variants.map((entry) => {
+    const variantId = createId();
+    const variant: ProductVariant = {
+      id: variantId,
+      productId,
+      sku: entry.sku,
+      barcode: entry.barcode || createBarcode(variantId.length + Date.now()),
+      color: entry.color,
+      size: entry.size,
+      landedCost: entry.landedCost,
+      retailPrice: entry.retailPrice,
+      reorderPoint: entry.reorderPoint,
+      threshold: entry.threshold,
+      active: entry.active,
+      createdAt: now,
+      updatedAt: now,
+    };
+    return { variant, initialStockByLocation: entry.initialStockByLocation };
+  });
+
+  try {
+    const variantIds = repo.addVariantsToProduct(productId, variantPayload);
+    invalidateRetailCaches();
+    return variantIds;
+  } catch (error) {
+    wrapRepositoryError(error);
+  }
 }
 
 export function updateProductWithVariant(
   productId: string,
   variantId: string,
-  values: ParsedProductFormValues
+  values: import('@/schemas/forms').ParsedProductFormValues
 ): void {
   const repo = getRetailRepository();
   const product = repo.getProductById(productId);
@@ -95,38 +117,70 @@ export function updateProductWithVariant(
     throw new CatalogServiceError('Product or variant not found');
   }
 
-  if (repo.isSkuTaken(values.sku, variantId)) {
-    throw new CatalogServiceError(`SKU "${values.sku}" is already in use`);
-  }
-
   const now = new Date().toISOString();
 
-  repo.updateProduct({
-    ...product,
-    name: values.name.trim(),
-    brandId: values.brandId,
-    categoryId: values.categoryId,
-    supplierId: values.supplierId,
-    description: values.description.trim(),
-    notes: values.notes.trim(),
-    updatedAt: now,
-  });
+  try {
+    repo.updateProduct({
+      ...product,
+      name: values.name.trim(),
+      brandId: values.brandId,
+      categoryId: values.categoryId,
+      supplierId: values.supplierId,
+      description: values.description.trim(),
+      notes: values.notes.trim(),
+      updatedAt: now,
+    });
 
-  repo.updateVariant({
-    ...variant,
-    sku: values.sku.trim(),
-    barcode: values.barcode.trim(),
-    color: values.color.trim(),
-    size: values.size.trim(),
-    landedCost: values.landedCost,
-    retailPrice: values.retailPrice,
-    reorderPoint: values.reorderPoint,
-    threshold: values.threshold,
-    active: values.active,
-    updatedAt: now,
-  });
+    repo.updateVariant({
+      ...variant,
+      sku: values.sku.trim(),
+      barcode: values.barcode.trim(),
+      color: values.color.trim(),
+      size: values.size.trim(),
+      landedCost: values.landedCost,
+      retailPrice: values.retailPrice,
+      reorderPoint: values.reorderPoint,
+      threshold: values.threshold,
+      active: values.active,
+      updatedAt: now,
+    });
 
-  invalidateRetailCaches();
+    invalidateRetailCaches();
+  } catch (error) {
+    wrapRepositoryError(error);
+  }
+}
+
+/** @deprecated Use createProductWithVariants — kept for compatibility */
+export function createProductWithVariant(
+  values: import('@/schemas/forms').ParsedProductFormValues,
+  initialStockByLocation: Record<string, number> = {}
+): { productId: string; variantId: string } {
+  const result = createProductWithVariants(
+    {
+      name: values.name,
+      brandId: values.brandId,
+      categoryId: values.categoryId,
+      supplierId: values.supplierId,
+      description: values.description,
+      notes: values.notes,
+    },
+    [
+      {
+        color: values.color,
+        size: values.size,
+        sku: values.sku,
+        barcode: values.barcode,
+        landedCost: values.landedCost,
+        retailPrice: values.retailPrice,
+        reorderPoint: values.reorderPoint,
+        threshold: values.threshold,
+        active: values.active,
+        initialStockByLocation,
+      },
+    ]
+  );
+  return { productId: result.productId, variantId: result.firstVariantId };
 }
 
 export function generateSuggestedBarcode(): string {

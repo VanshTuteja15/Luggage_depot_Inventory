@@ -7,3 +7,4 @@ export * from './dashboard';
 export * from './inventory';
 export * from './product-detail';
 export * from './product-form';
+export * from './stock-operations';

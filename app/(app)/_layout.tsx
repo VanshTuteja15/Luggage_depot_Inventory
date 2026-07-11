@@ -56,6 +56,7 @@ export default function AppLayout() {
       }}>
       <Drawer.Screen name="index" options={{ title: 'Dashboard' }} />
       <Drawer.Screen name="inventory/index" options={{ title: 'Inventory' }} />
+      <Drawer.Screen name="transfer/index" options={{ title: 'Transfer Stock' }} />
       <Drawer.Screen name="pricing/index" options={{ title: 'Pricing' }} />
       <Drawer.Screen name="reports/index" options={{ title: 'Reports' }} />
       <Drawer.Screen name="forecast/index" options={{ title: 'Forecast & Orders' }} />

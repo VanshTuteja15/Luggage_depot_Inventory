@@ -10,6 +10,14 @@ export {
   stockStatusLabel,
   toVariantFilter,
 } from './inventory-list-service';
+export {
+  adjustInventoryQuantity,
+  getAvailableTransferQuantity,
+  getStockOperationFormOptions,
+  previewAdjustmentQuantity,
+  StockOperationError,
+  transferStock,
+} from './stock-operations-service';
 export type {
   InventoryActiveFilter,
   InventoryFilterOptions,

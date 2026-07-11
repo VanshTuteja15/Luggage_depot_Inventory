@@ -1,5 +1,5 @@
-import { ProductFormView } from '@/features/product-form';
+import { MultiVariantProductFormView } from '@/features/product-form';
 
 export default function AddProductScreen() {
-  return <ProductFormView mode="add" />;
+  return <MultiVariantProductFormView />;
 }

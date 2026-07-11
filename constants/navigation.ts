@@ -33,6 +33,13 @@ export const APP_NAV_ITEMS: NavItem[] = [
     segment: 'inventory',
   },
   {
+    label: 'Transfer Stock',
+    href: route('/transfer'),
+    icon: 'swap-horizontal-outline',
+    description: 'Move inventory between locations',
+    segment: 'transfer',
+  },
+  {
     label: 'Pricing',
     href: route('/pricing'),
     icon: 'pricetag-outline',

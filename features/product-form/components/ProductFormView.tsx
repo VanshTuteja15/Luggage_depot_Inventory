@@ -11,6 +11,7 @@ import {
   addProductFormSchema,
   editProductFormSchema,
   parseProductFormValues,
+  validateEditVariantUniqueness,
   type AddProductFormValues,
 } from '@/schemas/forms';
 import {
@@ -86,6 +87,7 @@ export function ProductFormView({ mode, variantId, initialDetail }: ProductFormV
     control,
     handleSubmit,
     reset,
+    setError,
     formState: { errors, isSubmitting },
   } = useForm<AddProductFormValues>({
     resolver: zodResolver(mode === 'add' ? addProductFormSchema : editProductFormSchema),
@@ -116,6 +118,20 @@ export function ProductFormView({ mode, variantId, initialDetail }: ProductFormV
       if (!variantId || !initialDetail) {
         throw new CatalogServiceError('Missing variant context for edit');
       }
+
+      const uniquenessErrors = validateEditVariantUniqueness(
+        values,
+        initialDetail.product.id,
+        variantId
+      );
+      let hasUniquenessError = false;
+      Object.entries(uniquenessErrors).forEach(([field, message]) => {
+        if (message) {
+          setError(field as keyof AddProductFormValues, { message });
+          hasUniquenessError = true;
+        }
+      });
+      if (hasUniquenessError) return;
 
       updateProductWithVariant(initialDetail.product.id, variantId, parsed);
       router.replace(route(`/inventory/${variantId}`));

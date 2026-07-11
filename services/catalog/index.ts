@@ -1,6 +1,8 @@
 export {
   CatalogServiceError,
+  addVariantsToProduct,
   createProductWithVariant,
+  createProductWithVariants,
   generateSuggestedBarcode,
   updateProductWithVariant,
 } from './product-catalog-service';

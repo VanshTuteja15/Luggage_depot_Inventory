@@ -59,6 +59,11 @@ export function VariantDetailView({ variantId }: VariantDetailViewProps) {
         showBack
         actions={[
           {
+            icon: 'add-circle-outline',
+            label: 'Add variants',
+            onPress: () => router.push(route(`/inventory/add-variants/${detail.variant.id}`)),
+          },
+          {
             icon: 'create-outline',
             label: 'Edit product',
             onPress: () => router.push(route(`/inventory/edit/${detail.variant.id}`)),
@@ -144,6 +149,20 @@ export function VariantDetailView({ variantId }: VariantDetailViewProps) {
               title={row.locationName}
               meta={`${row.quantity} units`}
               showChevron={false}
+              rightAccessory={
+                <Button
+                  label="Adjust"
+                  variant="outline"
+                  size="sm"
+                  onPress={() =>
+                    router.push(
+                      route(
+                        `/inventory/adjust/${detail.variant.id}/${row.locationId}?qty=${row.quantity}`
+                      )
+                    )
+                  }
+                />
+              }
             />
           ))}
         </View>
@@ -222,11 +241,19 @@ export function VariantDetailView({ variantId }: VariantDetailViewProps) {
         )}
       </DetailSection>
 
-      <Button
-        label="Edit Product"
-        onPress={() => router.push(route(`/inventory/edit/${detail.variant.id}`))}
-        fullWidth
-      />
+      <View style={styles.actions}>
+        <Button
+          label="Transfer Stock"
+          variant="outline"
+          onPress={() => router.push(route(`/transfer?variantId=${detail.variant.id}`))}
+          fullWidth
+        />
+        <Button
+          label="Edit Product"
+          onPress={() => router.push(route(`/inventory/edit/${detail.variant.id}`))}
+          fullWidth
+        />
+      </View>
     </ScreenContainer>
   );
 }
@@ -256,5 +283,8 @@ const styles = StyleSheet.create({
   },
   list: {
     gap: spacing.sm,
+  },
+  actions: {
+    gap: spacing.md,
   },
 });

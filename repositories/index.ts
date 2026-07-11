@@ -7,4 +7,5 @@ export type {
   RetailRepository,
   SalesRepository,
 } from './interfaces';
-export type { RetailMutationRepository } from './mutation-interface';
+export type { RetailMutationRepository, VariantWithInitialStock } from './mutation-interface';
+export { RepositoryError } from './mutation-interface';
