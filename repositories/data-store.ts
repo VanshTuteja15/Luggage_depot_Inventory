@@ -1,11 +1,11 @@
 import { generateSeedData } from '@/data/seed';
 import type { SeedDataSet } from '@/types/domain';
 
-import type { RetailRepository } from './interfaces';
+import type { MutableRetailRepository } from './in-memory-retail-repository';
 import { createInMemoryRetailRepository } from './in-memory-retail-repository';
 
 let store: SeedDataSet | null = null;
-let repository: RetailRepository | null = null;
+let repository: MutableRetailRepository | null = null;
 
 export function getDataStore(): SeedDataSet {
   if (!store) {
@@ -14,7 +14,7 @@ export function getDataStore(): SeedDataSet {
   return store;
 }
 
-export function getRetailRepository(): RetailRepository {
+export function getRetailRepository(): MutableRetailRepository {
   if (!repository) {
     repository = createInMemoryRetailRepository(getDataStore());
   }

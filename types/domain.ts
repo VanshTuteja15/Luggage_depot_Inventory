@@ -209,6 +209,59 @@ export interface VariantView {
   stockStatus: VariantStockStatus;
 }
 
+export interface UnitPricingMetrics {
+  landedCost: number;
+  retailPrice: number;
+  profit: number;
+  marginPercent: number;
+  markupPercent: number;
+}
+
+export interface LocationInventoryRow {
+  locationId: string;
+  locationName: string;
+  quantity: number;
+}
+
+export interface SalesSummary {
+  lookbackDays: number;
+  unitsSold: number;
+  revenue: number;
+  estimatedProfit: number;
+  orderCount: number;
+  averageDailySales: number;
+}
+
+export interface VariantDetail {
+  product: Product;
+  variant: ProductVariant;
+  brand: Brand;
+  category: Category;
+  supplier: Supplier;
+  siblingVariants: ProductVariant[];
+  inventoryByLocation: LocationInventoryRow[];
+  totalQuantity: number;
+  unitPricing: UnitPricingMetrics;
+  pricing: PricingMetrics;
+  salesSummary: SalesSummary;
+  forecast: VariantForecast;
+  stockStatus: VariantStockStatus;
+  recentMovements: StockMovementView[];
+}
+
+export interface CreateProductInput {
+  product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>;
+  variant: Omit<ProductVariant, 'id' | 'productId' | 'createdAt' | 'updatedAt'>;
+  initialStockByLocation?: Record<string, number>;
+}
+
+export interface UpdateProductInput {
+  productId: string;
+  variantId: string;
+  product: Partial<Omit<Product, 'id' | 'createdAt' | 'updatedAt'>>;
+  variant: Partial<Omit<ProductVariant, 'id' | 'productId' | 'createdAt' | 'updatedAt'>>;
+}
+
 export interface SeedDataSet {
   locations: Location[];
   categories: Category[];

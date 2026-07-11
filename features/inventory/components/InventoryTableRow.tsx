@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Text } from '@/components/ui';
 import { colors, spacing } from '@/constants/theme';
@@ -15,14 +15,19 @@ import { InventoryStockBadge } from './InventoryStockBadge';
 type InventoryTableRowProps = {
   view: VariantView;
   locations: Location[];
+  onPress: () => void;
 };
 
-export function InventoryTableRow({ view, locations }: InventoryTableRowProps) {
+export function InventoryTableRow({ view, locations, onPress }: InventoryTableRowProps) {
   const unitPricing = calculateUnitPricing(view.variant.landedCost, view.variant.retailPrice);
   const locationSummary = getLocationStockSummary(view, locations, 3);
 
   return (
-    <View style={styles.row}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`View ${view.product.name}, ${view.variant.sku}`}
+      onPress={onPress}
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
       <Cell flex={2.2}>
         <Text variant="label" numberOfLines={1}>
           {view.product.name}
@@ -72,7 +77,7 @@ export function InventoryTableRow({ view, locations }: InventoryTableRowProps) {
       <Cell flex={1} align="right">
         <InventoryStockBadge status={view.stockStatus} />
       </Cell>
-    </View>
+    </Pressable>
   );
 }
 
@@ -102,6 +107,9 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
     backgroundColor: colors.surface,
+  },
+  pressed: {
+    backgroundColor: colors.disabledSurface,
   },
   headerRow: {
     backgroundColor: colors.disabledSurface,

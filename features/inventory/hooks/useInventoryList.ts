@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
+import { useFocusEffect } from '@react-navigation/native';
 
 import { getDataStore } from '@/repositories';
 import {
@@ -17,14 +18,21 @@ export function useInventoryList() {
   const [data, setData] = useState<InventoryListData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const loadData = useCallback(() => {
     try {
       getDataStore();
       setData(loadInventoryListData());
+      setError(null);
     } catch (loadError) {
       setError(loadError instanceof Error ? loadError.message : 'Failed to load inventory');
     }
   }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      loadData();
+    }, [loadData])
+  );
 
   const filteredViews = useMemo(() => {
     if (!data) return [];

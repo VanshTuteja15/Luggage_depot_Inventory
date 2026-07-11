@@ -1,4 +1,5 @@
 import { FlatList, ScrollView, StyleSheet, View, useWindowDimensions } from 'react-native';
+import { useRouter, type Href } from 'expo-router';
 
 import {
   EmptyState,
@@ -18,7 +19,12 @@ import { useInventoryList } from '../hooks/useInventoryList';
 
 const DESKTOP_BREAKPOINT = 1024;
 
+function route(path: string): Href {
+  return path as Href;
+}
+
 export function InventoryView() {
+  const router = useRouter();
   const { width } = useWindowDimensions();
   const isDesktop = width >= DESKTOP_BREAKPOINT;
 
@@ -52,11 +58,22 @@ export function InventoryView() {
     );
   }
 
+  const openVariant = (variantId: string) => {
+    router.push(route(`/inventory/${variantId}`));
+  };
+
   const listHeader = (
     <View style={styles.headerSection}>
       <Header
         title="Inventory"
         subtitle="Search and filter variants across all Calgary locations"
+        actions={[
+          {
+            icon: 'add-circle-outline',
+            label: 'Add product',
+            onPress: () => router.push(route('/inventory/add')),
+          },
+        ]}
       />
       <SearchBar
         value={filterState.search}
@@ -105,6 +122,7 @@ export function InventoryView() {
                 key={view.variant.id}
                 view={view}
                 locations={filterOptions.locations}
+                onPress={() => openVariant(view.variant.id)}
               />
             ))}
           </View>
@@ -121,7 +139,11 @@ export function InventoryView() {
         ListHeaderComponent={listHeader}
         contentContainerStyle={styles.listContent}
         renderItem={({ item }) => (
-          <InventoryCard view={item} locations={filterOptions.locations} />
+          <InventoryCard
+            view={item}
+            locations={filterOptions.locations}
+            onPress={() => openVariant(item.variant.id)}
+          />
         )}
         ItemSeparatorComponent={ListSeparator}
       />

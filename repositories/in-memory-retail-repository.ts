@@ -11,14 +11,18 @@ import type {
   Supplier,
 } from '@/types/domain';
 
+import type { RetailMutationRepository } from './mutation-interface';
 import type { RetailRepository } from './interfaces';
 
-export function createInMemoryRetailRepository(data: SeedDataSet): RetailRepository {
+export type MutableRetailRepository = RetailRepository & RetailMutationRepository;
+
+export function createInMemoryRetailRepository(data: SeedDataSet): MutableRetailRepository {
   const locationById = new Map(data.locations.map((l) => [l.id, l]));
   const categoryById = new Map(data.categories.map((c) => [c.id, c]));
   const brandById = new Map(data.brands.map((b) => [b.id, b]));
   const productById = new Map(data.products.map((p) => [p.id, p]));
   const variantById = new Map(data.variants.map((v) => [v.id, v]));
+  const skuIndex = new Map(data.variants.map((v) => [v.sku.toLowerCase(), v.id]));
 
   const inventoryByVariant = new Map<string, InventoryRecord[]>();
   data.inventory.forEach((record) => {
@@ -34,9 +38,22 @@ export function createInMemoryRetailRepository(data: SeedDataSet): RetailReposit
     salesByVariant.set(sale.variantId, list);
   });
 
-  const sortedMovements = [...data.stockMovements].sort(
+  const movementsByVariant = new Map<string, StockMovement[]>();
+  data.stockMovements.forEach((movement) => {
+    const list = movementsByVariant.get(movement.variantId) ?? [];
+    list.push(movement);
+    movementsByVariant.set(movement.variantId, list);
+  });
+
+  let sortedMovements = [...data.stockMovements].sort(
     (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
   );
+
+  function resortMovements() {
+    sortedMovements = [...data.stockMovements].sort(
+      (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
+  }
 
   return {
     getLocations: (): Location[] => data.locations,
@@ -69,5 +86,76 @@ export function createInMemoryRetailRepository(data: SeedDataSet): RetailReposit
 
     getStockMovements: (): StockMovement[] => data.stockMovements,
     getRecentMovements: (limit: number): StockMovement[] => sortedMovements.slice(0, limit),
+    getMovementsByVariantId: (variantId: string, limit = 20): StockMovement[] => {
+      const movements = movementsByVariant.get(variantId) ?? [];
+      return [...movements]
+        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+        .slice(0, limit);
+    },
+
+    createProduct: (product: Product): Product => {
+      data.products.push(product);
+      productById.set(product.id, product);
+      return product;
+    },
+
+    updateProduct: (product: Product): Product => {
+      const index = data.products.findIndex((entry) => entry.id === product.id);
+      if (index === -1) throw new Error(`Product ${product.id} not found`);
+      data.products[index] = product;
+      productById.set(product.id, product);
+      return product;
+    },
+
+    createVariant: (variant: ProductVariant): ProductVariant => {
+      if (skuIndex.has(variant.sku.toLowerCase())) {
+        throw new Error(`SKU ${variant.sku} is already in use`);
+      }
+      data.variants.push(variant);
+      variantById.set(variant.id, variant);
+      skuIndex.set(variant.sku.toLowerCase(), variant.id);
+      return variant;
+    },
+
+    updateVariant: (variant: ProductVariant): ProductVariant => {
+      const existing = variantById.get(variant.id);
+      if (!existing) throw new Error(`Variant ${variant.id} not found`);
+
+      const normalizedSku = variant.sku.toLowerCase();
+      const ownerId = skuIndex.get(normalizedSku);
+      if (ownerId && ownerId !== variant.id) {
+        throw new Error(`SKU ${variant.sku} is already in use`);
+      }
+
+      skuIndex.delete(existing.sku.toLowerCase());
+      const index = data.variants.findIndex((entry) => entry.id === variant.id);
+      data.variants[index] = variant;
+      variantById.set(variant.id, variant);
+      skuIndex.set(normalizedSku, variant.id);
+      return variant;
+    },
+
+    isSkuTaken: (sku: string, excludeVariantId?: string): boolean => {
+      const ownerId = skuIndex.get(sku.toLowerCase());
+      if (!ownerId) return false;
+      return excludeVariantId ? ownerId !== excludeVariantId : true;
+    },
+
+    createInventoryRecord: (record: InventoryRecord): InventoryRecord => {
+      data.inventory.push(record);
+      const list = inventoryByVariant.get(record.variantId) ?? [];
+      list.push(record);
+      inventoryByVariant.set(record.variantId, list);
+      return record;
+    },
+
+    createStockMovement: (movement: StockMovement): StockMovement => {
+      data.stockMovements.push(movement);
+      const list = movementsByVariant.get(movement.variantId) ?? [];
+      list.push(movement);
+      movementsByVariant.set(movement.variantId, list);
+      resortMovements();
+      return movement;
+    },
   };
 }

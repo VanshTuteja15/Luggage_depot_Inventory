@@ -4,4 +4,6 @@ export * from './forecast';
 export * from './filter';
 export * from './dashboard';
 export * from './inventory';
+export * from './catalog';
+export * from './sales';
 export * from './clover';

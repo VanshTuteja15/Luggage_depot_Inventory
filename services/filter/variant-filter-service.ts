@@ -90,6 +90,10 @@ export function getVariantViews(): VariantView[] {
   return cachedViews;
 }
 
+export function clearVariantViewsCache(): void {
+  cachedViews = null;
+}
+
 export function filterVariantViews(views: VariantView[], filter: VariantFilter): VariantView[] {
   return views.filter((view) => {
     if (filter.active !== undefined && view.variant.active !== filter.active) return false;

@@ -5,3 +5,5 @@
 export * from './app';
 export * from './dashboard';
 export * from './inventory';
+export * from './product-detail';
+export * from './product-form';

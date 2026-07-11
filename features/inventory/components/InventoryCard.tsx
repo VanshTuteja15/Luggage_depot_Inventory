@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Card, Text } from '@/components/ui';
 import { colors, spacing } from '@/constants/theme';
@@ -15,14 +15,20 @@ import { InventoryStockBadge } from './InventoryStockBadge';
 type InventoryCardProps = {
   view: VariantView;
   locations: Location[];
+  onPress: () => void;
 };
 
-export function InventoryCard({ view, locations }: InventoryCardProps) {
+export function InventoryCard({ view, locations, onPress }: InventoryCardProps) {
   const unitPricing = calculateUnitPricing(view.variant.landedCost, view.variant.retailPrice);
   const locationSummary = getLocationStockSummary(view, locations);
 
   return (
-    <Card style={styles.card}>
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`View ${view.product.name}, ${view.variant.sku}`}
+      onPress={onPress}
+      style={({ pressed }) => [pressed && styles.pressed]}>
+      <Card style={styles.card}>
       <View style={styles.header}>
         <View style={styles.titleBlock}>
           <Text variant="label">{view.product.name}</Text>
@@ -56,7 +62,8 @@ export function InventoryCard({ view, locations }: InventoryCardProps) {
           </Text>
         ) : null}
       </View>
-    </Card>
+      </Card>
+    </Pressable>
   );
 }
 
@@ -74,6 +81,9 @@ function MetaItem({ label, value }: { label: string; value: string }) {
 const styles = StyleSheet.create({
   card: {
     gap: spacing.md,
+  },
+  pressed: {
+    opacity: 0.92,
   },
   header: {
     flexDirection: 'row',
